@@ -29,9 +29,10 @@ else
   printf("parent process\n"); 
    printf("parent wait \n"); 
     printf("\n");
-  int a= waitpid(pid,NULL,WNOHANG);
+  int a;
   while(1)
   {
+      a= waitpid(pid,NULL,WNOHANG);
       if(a==pid)
       {
           break;
@@ -46,6 +47,8 @@ else
      {
          perror("Error");
      }
+     
+     printf("parent after the child exit ");
   }
 } 
     return 0;
