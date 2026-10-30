@@ -1,0 +1,52 @@
+// parent wait for the child child sleep(3)
+//parent check after 1s the child exit or not
+// and at each time of checking it will show the
+// msg so here we use for this waitpid(pid,null,WNOHANG)
+#include<stdio.h>
+#include<sys/wait.h>
+#include<unistd.h>
+#include<sys/types.h>
+int main()
+{
+pid_t pid=fork();
+int num=5;
+
+ printf("\n");
+if(pid<0)
+{
+    perror("child not created\n");
+    return 1;
+}
+else if(pid==0)
+{
+    printf("child process\n");
+   sleep(2);
+     printf("child task completed\n");
+   printf("\n");
+}
+else
+{
+  printf("parent process\n"); 
+   printf("parent wait \n"); 
+    printf("\n");
+  int a= waitpid(pid,NULL,WNOHANG);
+  while(1)
+  {
+      if(a==pid)
+      {
+          break;
+      }
+      else if(a==0)
+      {
+         printf("Parent waiting for the child exit ");
+          printf("\n");
+         sleep(1);// parent wait 1s and check again the child finished or not 
+      }
+     else
+     {
+         perror("Error");
+     }
+  }
+} 
+    return 0;
+}
