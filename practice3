@@ -1,0 +1,44 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
+
+int main(void)
+{
+   int fd[2];
+   char msg[]="Simi shah";
+   char buffer[100]={0};
+   if(pipe(fd)==-1)
+   {
+       printf("Error");
+       return -1;
+   }
+   // humne kha data msg array mn h or isee read krlo msg+1 bytes tk 
+   if(write(fd[1],msg,strlen(msg)+1)==-1)// strlen is used to count how many bites are covered in the msg content it means we are telling here that read data until Simi shah/0  bites 1 extra for 0 
+   {
+       printf("Write Error");
+       return -1;
+   }
+   //message read krna h buffer array mn or iska size 100 h to tum 100 bites tk ismn data read krskte ho 
+   if(read(fd[0],buffer,sizeof(buffer))==-1)//sizeof gives value 100 here dont use strlen it will give 0 because 0 bites are covered in the buffer content
+   {
+      printf("Read Error");
+       return -1; 
+   }
+   printf("Read message is %s",buffer);
+   close(fd[0]);
+   close(fd[1]);
+   
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
