@@ -1,0 +1,15 @@
+#include <stdio.h>
+#include <unistd.h>
+
+int main()
+{
+    char array[100];
+// read from console
+    int n = read(0, array, 100);// n store how many bites off array are used out of 100
+//display on the screen
+    write(1, array, n);// n is the exact count of the array
+
+    return 0;
+}
+
+
