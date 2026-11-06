@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+int main(int argc,char*argv)
+{
+    //argv[1]=hello
+  //strleln is used to get the length of the hello
+    write(1, argv[1], strlen(argv[1]));// argv[1] stores the argument let suppose hello
+
+    return 0;
+}
+
+
