@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+int main()
+{
+   int fd[2];
+   char msg[]="Hello simi from child process";
+   char buffer[100]={0};
+   if(pipe(fd)==-1)
+   {
+       perror("No pipe ");
+       return -1;
+   }
+   int pid=fork();
+   if(pid==-1)
+   {
+       perror("No child creat");
+       return -1;
+   }
+   else if(pid==0)
+   {
+       close(fd[0]);
+       write(fd[1],msg,strlen(msg)+1);
+       close(fd[1]);
+   }
+   else
+   {
+    close(fd[1]);
+   int n= read(fd[0],buffer,sizeof(buffer));// n is the total data size who is in the  buffer cover out of 100
+   close(fd[0]);
+   if(n>0)
+   {
+       printf("Message to parent= %s",buffer);
+   }
+   }
+   
+    return 0;
+}
