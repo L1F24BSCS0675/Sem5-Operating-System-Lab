@@ -1,0 +1,135 @@
+// use 4 pipes
+// 2childs
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main()
+{
+    int n;
+    printf("Enter total ");
+    scanf("%d",&n);
+     int arr[n];
+      int t=n/2;
+     printf("Enter %d values",n);
+    for (int i=0;i<n;i++)
+    {
+       scanf("%d",&arr[i]); 
+    }
+    
+    int fd[2];
+    pipe(fd);
+    
+    int fd2[2];
+    pipe(fd2);
+    
+     int fd11[2];
+    pipe(fd11);
+    
+    int fd22[2];
+    pipe(fd22);
+    
+    // first child
+    int pid=fork();
+    if(pid==-1)
+    {
+        perror("Child not created");
+    }
+     else if(pid==0)
+    {
+      
+      int rd1[t];
+      close(fd[1]);
+      read(fd[0],rd1,t*(sizeof(int)));
+      int s=rd1[0];
+      
+      for(int i=1;i<t;i++)
+      {
+          if(rd1[i]<s)
+          {
+              s=rd1[i];
+          }
+      }
+      close(fd11[0]);
+      write(fd11[1],&s,sizeof(int));//use & with adress beacuse 2 arg represents adress wedont add it with array because array name itself is a adress
+       close(fd[0]);
+      close(fd11[1]);
+      exit(0);
+    }
+     // second child
+    int pid2=fork();
+    if(pid2==-1)
+    {
+        perror("Child not created");
+    }
+    
+     else if(pid2==0)
+    {
+     int rd2[t];
+      close(fd2[1]);
+     read(fd2[0],rd2,t*(sizeof(int)));
+      int s2=rd2[0];
+      
+      for(int i=1;i<t;i++)
+      {
+          if(rd2[i]<s2)
+          {
+              s2=rd2[i];
+          }
+      }
+      close(fd22[0]);
+      write(fd22[1],&s2,sizeof(int));
+       close(fd2[0]);
+      close(fd22[1]);
+      
+      exit(0);
+    }
+    
+    
+     else
+    {
+       
+        int dt[t];
+        int dt2[t];
+        for (int i=0;i<t;i++)
+        {
+            dt[i]=arr[i];
+        }
+        
+        int j=0;
+        
+         for (int i=t;i<n;i++)
+        {
+            dt2[j++]=arr[i];
+        }
+        
+      close(fd[0]);
+      close(fd2[0]);
+      write(fd[1],dt,t*(sizeof(int)));
+      write(fd2[1],dt2,t*(sizeof(int)));
+      
+      waitpid(pid,0,0);
+      int small1=0;
+      close(fd11[1]);
+      read(fd11[0],&small1,sizeof(int));
+       waitpid(pid2,0,0);
+        int small2=0;
+        close(fd22[1]);
+      read(fd22[0],&small2,sizeof(int));
+       if(small1<small2)
+       {
+           printf("Small =  %d",small1);
+       }
+       else
+       {
+            printf("Small =  %d",small2);
+       }
+       close(fd11[0]);
+        close(fd22[0]);
+       
+    }
+
+    return 0;
+}
