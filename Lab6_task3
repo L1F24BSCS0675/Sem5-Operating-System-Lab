@@ -1,0 +1,117 @@
+// use 4 pipes
+// 2childs
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main(int argc,char* argv[])
+{
+    int count=argc-1;
+    int arr[count];
+    for (int i=0;i<count;i++)
+    {
+        arr[i]=atoi(argv[i+1]);
+    }
+    
+    
+    int fd[2];
+    pipe(fd);
+    
+    int fd2[2];
+    pipe(fd2);
+    
+     int fd11[2];
+    pipe(fd11);
+    
+    int fd22[2];
+    pipe(fd22);
+    
+    // first child
+    int pid=fork();
+    if(pid==-1)
+    {
+        perror("Child not created");
+    }
+     else if(pid==0)
+    {
+      
+      int rd1[count];
+      close(fd[1]);
+      read(fd[0],rd1,count*(sizeof(int)));
+      int sum=0;
+      
+      for(int i=0;i<count;i++)
+      {
+          sum=sum+rd1[i];
+      }
+      
+      close(fd11[0]);
+      write(fd11[1],&sum,sizeof(int));
+       close(fd[0]);
+      close(fd11[1]);
+      exit(0);
+    }
+     // second child
+    int pid2=fork();
+    if(pid2==-1)
+    {
+        perror("Child not created");
+    }
+    
+     else if(pid2==0)
+    {
+     int rd2[count];
+      close(fd2[1]);
+     read(fd2[0],rd2,count*(sizeof(int)));
+      int small=rd2[0];
+      
+      for(int i=1;i<count;i++)
+      {
+          if(rd2[i]<small)
+          {
+              small=rd2[i];
+          }
+      }
+      close(fd22[0]);
+      write(fd22[1],&small,sizeof(int));
+       close(fd2[0]);
+      close(fd22[1]);
+      
+      exit(0);
+    }
+    
+    
+     else
+    {
+       
+        
+      close(fd[0]);
+      write(fd[1],arr,count*(sizeof(int)));
+      
+       close(fd2[0]);
+      write(fd2[1],arr,count*(sizeof(int)));
+      
+      // first child who return sum of array 
+      waitpid(pid,0,0);
+      int add=0;
+      close(fd11[1]);
+      read(fd11[0],&add,sizeof(int));
+       printf("Sum of  array by child1 =  %d\n",add);
+       
+       
+      // second child who return min of array 
+       waitpid(pid2,0,0);
+        int min=0;
+        close(fd22[1]);
+      read(fd22[0],&min,sizeof(int));
+      printf("Minimum in array by child2 =  %d\n",min);
+       
+       close(fd11[0]);
+        close(fd22[0]);
+       
+    }
+
+    return 0;
+}
