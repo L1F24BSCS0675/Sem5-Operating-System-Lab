@@ -1,0 +1,208 @@
+// for permission and for the signal use descriptors whoe are used at 1 time
+// use descriptor who used in passing the array from parent to child here
+// we use fd for first child and f2 for the second child because throgh
+// this we read and write the array 
+// imp
+// write array from parent in the child use 1 descriptor
+// write array ansfrom   child to the parent  use 2 descriptor
+
+// write array from parent in the child2 use 3 descriptor
+// write array ans from   child2 to the parent  use 4 descriptor
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+int main()
+{
+    int n;
+    printf("Enter total: ");
+    scanf("%d", &n);
+
+    if(n < 2 || n % 2 != 0)// check even array
+    {
+        printf("Enter an even number greater than 1\n");
+        return 1;
+    }
+
+    int arr[n];
+    int t = n / 2;//  t make to use it globally in the parent or every child process
+
+    printf("Enter %d values:\n", n);
+
+    for(int i = 0; i < n; i++)
+    {
+        scanf("%d", &arr[i]);
+    }
+
+    int fd[2], fd2[2], fd11[2], fd22[2];
+
+    pipe(fd);
+    pipe(fd2);
+    pipe(fd11);
+    pipe(fd22);
+
+    // First child
+    int pid = fork();
+
+    if(pid == -1)
+    {
+        perror("Child not created");
+        return 1;
+    }
+    else if(pid == 0)
+    {
+        int rd1[t];
+        int sg1, p1;
+
+        close(fd[1]);
+        close(fd2[0]);
+        close(fd2[1]);
+        close(fd11[0]);
+        close(fd22[0]);
+        close(fd22[1]);
+
+        read(fd[0], rd1, t * sizeof(int));
+
+        // Wait for parent's signal 
+        // start calculation when the parent give a signal
+        read(fd[0], &sg1, sizeof(int));
+
+        if(sg1 == 1)
+        {
+            int s = rd1[0];
+
+            for(int i = 1; i < t; i++)
+            {
+                if(rd1[i] < s)
+                {
+                    s = rd1[i];
+                }
+            }
+
+            // Send minimum to parent
+            write(fd11[1], &s, sizeof(int));
+
+            // Wait for parent's permission to exit
+            read(fd[0], &p1, sizeof(int));
+        }
+
+        close(fd[0]);
+        close(fd11[1]);
+        exit(0);
+    }
+
+    // Second child
+    int pid2 = fork();
+
+    if(pid2 == -1)
+    {
+        perror("Child not created");
+        return 1;
+    }
+    else if(pid2 == 0)
+    {
+        int rd2[t];
+        int sg2, p2;
+
+        close(fd2[1]);
+        close(fd[0]);
+        close(fd[1]);
+        close(fd22[0]);
+        close(fd11[0]);
+        close(fd11[1]);
+
+        read(fd2[0], rd2, t * sizeof(int));
+
+        // Wait for parent's signal
+        read(fd2[0], &sg2, sizeof(int));
+
+        if(sg2 == 1)
+        {
+            int s2 = rd2[0];
+
+            for(int i = 1; i < t; i++)
+            {
+                if(rd2[i] < s2)
+                {
+                    s2 = rd2[i];
+                }
+            }
+
+            // Send minimum to parent
+            write(fd22[1], &s2, sizeof(int));
+
+            // Wait for parent's permission to exit
+            read(fd2[0], &p2, sizeof(int));
+        }
+
+        close(fd2[0]);
+        close(fd22[1]);
+        exit(0);
+    }
+
+    // Parent process
+    int dt[t], dt2[t];
+
+    for(int i = 0; i < t; i++)
+    {
+        dt[i] = arr[i];
+    }
+
+    int j = 0;
+
+    for(int i = t; i < n; i++)
+    {
+        dt2[j++] = arr[i];
+    }
+
+    close(fd[0]);
+    close(fd2[0]);
+    close(fd11[1]);
+    close(fd22[1]);
+
+    // Send arrays to children
+    write(fd[1], dt, t * sizeof(int));
+    write(fd2[1], dt2, t * sizeof(int));
+
+    // Send signal 1 to allow children to start
+    int signal = 1;
+
+    write(fd[1], &signal, sizeof(int));
+    write(fd2[1], &signal, sizeof(int));
+
+    // Receive answers from children
+    int small1, small2;
+
+    read(fd11[0], &small1, sizeof(int));
+    read(fd22[0], &small2, sizeof(int));
+
+    if(small1 < small2)
+    {
+        printf("Smallest = %d\n", small1);
+    }
+    else
+    {
+        printf("Smallest = %d\n", small2);
+    }
+
+    // Send permission 9 to allow children to exit
+    int permission = 9;
+
+    write(fd[1], &permission, sizeof(int));
+    write(fd2[1], &permission, sizeof(int));
+
+    close(fd[1]);
+    close(fd2[1]);
+    close(fd11[0]);
+    close(fd22[0]);
+
+    waitpid(pid, NULL, 0);
+    waitpid(pid2, NULL, 0);
+
+    printf("Both children completed\n");
+
+    return 0;
+}
