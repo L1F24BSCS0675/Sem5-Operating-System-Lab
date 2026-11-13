@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     int fd;
     fd = open(argv[1], O_CREAT | O_TRUNC | O_RDWR, 0777);
     dup2(fd, 1);
+
     close(fd);
     execlp(argv[2], argv[2], "/", argv[3], NULL);
 
