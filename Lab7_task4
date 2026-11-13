@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+int main(int argc, char *argv[])
+{
+    int wf;
+    int p1[2];
+    int p2[2];
+    int p3[2];
+
+    pipe(p1);
+    pipe(p2);
+    pipe(p3);
+
+    int pid = fork();
+    if (pid == 0)
+    {
+        wf = open("error.txt", O_CREAT | O_TRUNC | O_WRONLY, 0644);
+        dup2(wf, 2);
+        dup2(p1[1], 1);
+        close(wf);
+        close(p1[0]); close(p1[1]);
+        close(p2[0]); close(p2[1]);
+        close(p3[0]); close(p3[1]);
+
+        execlp("ls", "ls", "/", "-lR", NULL);
+        perror("exec ls failed");
+        exit(1);
+    }
+
+    int pid2 = fork();
+    if (pid2 == 0)
+    {
+        dup2(p1[0], 0);
+        dup2(p2[1], 1);
+        close(p1[0]); close(p1[1]);
+        close(p2[0]); close(p2[1]);
+        close(p3[0]); close(p3[1]);
+
+        execlp("grep", "grep", "Nov", NULL);
+      
+        exit(1);
+    }
+
+    int pid3 = fork();
+    if (pid3 == 0)
+    {
+        dup2(p2[0], 0);
+        dup2(p3[1], 1);
+        close(p1[0]); close(p1[1]);
+        close(p2[0]); close(p2[1]);
+        close(p3[0]); close(p3[1]);
+
+        execlp("sort", "sort", NULL);
+       
+        exit(1);
+    }
+
+    dup2(p3[0], 0);
+    close(p1[0]); close(p1[1]);
+    close(p2[0]); close(p2[1]);
+    close(p3[0]); close(p3[1]);
+
+    execlp("less", "less", NULL);
+   
+    return 1;
+}
