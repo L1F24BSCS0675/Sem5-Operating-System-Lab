@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+
+int main()
+{
+    int fd[2];
+    int wf;
+
+    if (pipe(fd) == -1)
+    {
+        perror("pipe failed");
+        exit(1);
+    }
+
+    int pid = fork();
+
+    if (pid == 0)
+    {
+        /* child: grep "m" < input.txt | (into pipe) */
+        wf = open("input.txt", O_RDONLY);
+        if (wf == -1)
+        {
+            perror("open input.txt failed");
+            exit(1);
+        }
+        dup2(wf, 0);
+        close(wf);
+        close(fd[0]);
+        dup2(fd[1], 1);
+        close(fd[1]);
+        execlp("grep", "grep", "m", NULL);
+        perror("exec grep failed");
+        exit(1);
+    }
+    else if (pid > 0)
+    {
+        /* parent: sort > output.txt (from pipe) */
+        int out = open("output.txt", O_CREAT | O_TRUNC | O_WRONLY, 0644);
+        if (out == -1)
+        {
+            perror("open output.txt failed");
+            exit(1);
+        }
+        close(fd[1]);
+        dup2(fd[0], 0);
+        close(fd[0]);
+        dup2(out, 1);
+        close(out);
+        execlp("sort", "sort", NULL);
+        perror("exec sort failed");
+        exit(1);
+    }
+    else
+    {
+        perror("fork failed");
+        exit(2);
+    }
+
+    return 0;
+}
